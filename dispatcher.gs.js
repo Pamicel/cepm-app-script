@@ -1,6 +1,7 @@
 function pa_dispatchGroups () {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
   const sourceSheet = pa_getSheetById(2071274177);
-  const targetSheet = pa_getSheetById(1846585120);
 
   // Logger.log(JSON.stringify(passengersByVoyage, null, 2));
   // targetSheet.getRange(1, 1).setValue(Logger.getLog());
@@ -65,7 +66,6 @@ function pa_dispatchGroups () {
 
   // Diviser par traversée
 
-  // TO BE TESTED
   const passengersByVoyage = data.slice(1).reduce(function (acc, pass) {
     const voyageName = pass[voyageIndex];
     if (acc[voyageName]) {
@@ -79,7 +79,7 @@ function pa_dispatchGroups () {
 
   // Pour chaque traversée
   const voyages = Object.keys(passengersByVoyage);
-  voyages.forEach(function (voyage) {
+  voyages.forEach(function (voyage, INDEX) {
     // Supprimer les doubles adresses mail
       // (ne garder que celles avec le dernier timestamp)
     const passengersByEmail = passengersByVoyage[voyage].reduce(function (acc, pass) {
@@ -94,7 +94,7 @@ function pa_dispatchGroups () {
       return (acc);
     }, {});
 
-    const passengersEmails = Object.keys[passengersByEmail];
+    const passengersEmails = Object.keys(passengersByEmail);
 
     // Compute max group size
     const groupSize = Math.ceil(passengersEmails.length / 3);
@@ -131,26 +131,11 @@ function pa_dispatchGroups () {
       return (pass[grievanceIndex] === 'Oui');
     };
 
-    const groups = [
-      {
-        hasAccomplice: false,
-        passengers: [],
-      },
-      {
-        hasAccomplice: false,
-        passengers: [],
-      },
-      {
-        hasAccomplice: false,
-        passengers: [],
-      },
-    ];
-
     function groupIsFull (group) {
       return (group.length === groupSize - (!group.hasAccomplice));
     }
 
-    passengersEmails.reduce(function (groups, email) {
+    const groups = passengersEmails.reduce(function (groups, email) {
       const pass = passengersByEmail[email];
 
       const accompliceOf = isAccompliceOf(pass);
@@ -174,6 +159,36 @@ function pa_dispatchGroups () {
         // Tant que emeraude n'est pas plein, mettre dans emeraude
         groups[EMERAUDE].passengers.push(pass);
       }
-    }, groups);
+
+      return groups;
+    }, [
+      {
+        hasAccomplice: false,
+        passengers: [],
+      },
+      {
+        hasAccomplice: false,
+        passengers: [],
+      },
+      {
+        hasAccomplice: false,
+        passengers: [],
+      },
+    ]);
+
+
+    var targetSheet = spreadsheet.getSheetByName(voyage);
+    if (targetSheet) {
+      // Append the stuff
+    } else {
+      targetSheet = spreadsheet.insertSheet(voyage);
+      // Append the stuff
+    }
+
+    // Logger.log(JSON.stringify(groups[EMERAUDE].passengers[0], null, 2));
+    targetSheet.getRange(1, 1, groups[EMERAUDE].passengers.length, groups[EMERAUDE].passengers[0].length).setValues(groups[EMERAUDE].passengers);
+    // targetSheet.getRange(1, 1).setValue(Logger.getLog());
+    // Logger.clear();
+    return;
   });
 }
