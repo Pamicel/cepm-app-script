@@ -1,14 +1,17 @@
 // Target and source sheets
 function getDiagramSheet() {
-  return pa_getSheetById(1832439418);
+  const spreadsheet = SpreadsheetApp.openById('1dHJb1geWyWj_zQgzAT9WeUIvf86MMeWcp69YYn3OvpA');
+  return pa_getSheetById(spreadsheet, 1832439418);
 }
 
 function getVariationsSheet() {
-  return pa_getSheetById(1935916156);
+  const spreadsheet = SpreadsheetApp.openById('1dHJb1geWyWj_zQgzAT9WeUIvf86MMeWcp69YYn3OvpA');
+  return pa_getSheetById(spreadsheet, 1935916156);
 }
 
 function getInfoSheet() {
-  return pa_getSheetById(493082356);
+  const spreadsheet = SpreadsheetApp.openById('1dHJb1geWyWj_zQgzAT9WeUIvf86MMeWcp69YYn3OvpA');
+  return pa_getSheetById(spreadsheet, 493082356);
 }
 
 //
