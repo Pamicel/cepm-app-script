@@ -44,23 +44,21 @@ function pa_dispatchGroups () {
     FIRM_OK: 11,
     HAS_CAT_OR_DOG: 12,
     HAS_GRIEVANCES: 13,
+    DOUBLE: 14,
+    IS_PAYMENT_INFO: 15,
   }
 
   // UTILS
-  const accompliceIndices = [];
-  accompliceIndices[EMERAUDE] = PASSENGERS_COLUMNS.ACCOMPLICE_EMERAUDE - 1;
-  accompliceIndices[BLEU] = PASSENGERS_COLUMNS.ACCOMPLICE_BLEU - 1;
-  accompliceIndices[ROSE] = PASSENGERS_COLUMNS.ACCOMPLICE_ROSE - 1;
 
   // Detecter les complices
   const isAccompliceOf = function (pass) {
-    if (pass[accompliceIndices[EMERAUDE]]) {
+    if (pass[PASSENGERS_COLUMNS.ACCOMPLICE_EMERAUDE - 1]) {
       return EMERAUDE;
     }
-    if (pass[accompliceIndices[BLEU]]) {
+    if (pass[PASSENGERS_COLUMNS.ACCOMPLICE_BLEU - 1]) {
       return BLEU;
     }
-    if (pass[accompliceIndices[ROSE]]) {
+    if (pass[PASSENGERS_COLUMNS.ACCOMPLICE_ROSE - 1]) {
       return ROSE;
     }
 
@@ -88,7 +86,7 @@ function pa_dispatchGroups () {
   // DATA HANDLING
 
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sourceSheet = pa_getSheetById(spreadsheet, 442430394);
+  const sourceSheet = pa_getSheetById(spreadsheet, 1277416213);
   const data = sourceSheet.getDataRange().getValues();
 
   const EMERAUDE = 0;
@@ -117,49 +115,36 @@ function pa_dispatchGroups () {
     // Create full group function
     const groupIsFull = groupIsFullFunction(groupSize);
 
-    var tmp = true;
     // Create groups
     const groups = passengers.reduce(function (groups, pass) {
       const accompliceOf = isAccompliceOf(pass);
-
-      // DEBUG
-      if (tmp) {
-        tmp = false;
-        Logger.log(groups);
-      }
-      // Logger.log(isPetLover(pass));
-      // Logger.log(hasGrievance(pass));
-      // Logger.log(groupIsFull(BLEU));
-      // Logger.log(groupIsFull(EMERAUDE));
-      // Logger.log(groupIsFull(ROSE));
-      // Logger.log("");
-      // DEBUG
-
       if (accompliceOf !== -1) {
         // Si le passager est le complice d'un groupe en particulier, l'y mettre
         groups.hasAccomplice = true;
         groups[accompliceOf].passengers.push(pass);
-        Logger.log('group ' + group + ' +1');
       } else if (!groupIsFull(groups[EMERAUDE]) && hasGrievance(pass)) {
         // Tant que emeraude n'est pas plein, et qu'il reste des griefs, les mettre dedans
         groups[EMERAUDE].passengers.push(pass);
-        Logger.log('group EMERAUDE +1 | total ' + groups[EMERAUDE].passengers.length);
       } else if (!groupIsFull(groups[ROSE]) && isPetLover(pass)) {
         // Tant que rose n'est pas plein, et qu'il reste des pet lovers, les mettre dedans
         groups[ROSE].passengers.push(pass);
-        Logger.log('group ROSE +1 | total ' + groups[ROSE].passengers.length);
-      } else if (!groupIsFull(groups[BLEU])) {
-        // Tant que bleu n'est pas plein, mettre dans bleu
-        groups[BLEU].passengers.push(pass);
-        Logger.log('group BLEU +1 | total ' + groups[BLEU].passengers.length);
-      } else if (!groupIsFull(groups[ROSE])) {
-        // Tant que rose n'est pas plein, mettre dans rose
-        groups[ROSE].passengers.push(pass);
-        Logger.log('group ROSE +1 | total ' + groups[ROSE].passengers.length);
-      } else if (!groupIsFull(groups[EMERAUDE])) {
-        // Tant que emeraude n'est pas plein, mettre dans emeraude
-        groups[EMERAUDE].passengers.push(pass);
-        Logger.log('group EMERAUDE +1 | total ' + groups[EMERAUDE].passengers.length);
+      } else {
+        const em = groups[EMERAUDE].passengers.length;
+        const bl = groups[BLEU].passengers.length;
+        const ro = groups[ROSE].passengers.length;
+        const smallest = Math.min(em, bl, ro);
+
+        switch (smallest) {
+          case em:
+            groups[EMERAUDE].passengers.push(pass);
+            break;
+          case bl:
+            groups[BLEU].passengers.push(pass);
+            break;
+          case ro:
+            groups[ROSE].passengers.push(pass);
+            break;
+        }
       }
 
       return groups;
@@ -184,30 +169,50 @@ function pa_dispatchGroups () {
       targetSheet = spreadsheet.insertSheet(voyage);
     }
 
-    pa_getSheetById(spreadsheet, 1069358045).getRange(1, 1).setValue(Logger.getLog());
+    function passengerToGroupMember (color) {
+      return function (passenger) {
+        return [
+          color,
+          passenger[PASSENGERS_COLUMNS.FIRST_NAME - 1],
+          passenger[PASSENGERS_COLUMNS.LAST_NAME - 1],
+          passenger[PASSENGERS_COLUMNS.FIRM_OK - 1],
+          passenger[PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1],
+          passenger[PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1],
+          (
+            passenger[PASSENGERS_COLUMNS.ACCOMPLICE_BLEU - 1] ||
+            passenger[PASSENGERS_COLUMNS.ACCOMPLICE_EMERAUDE - 1] ||
+            passenger[PASSENGERS_COLUMNS.ACCOMPLICE_ROSE - 1]
+          ),
+        ]
+      };
+    }
 
-
-    const height = groups[EMERAUDE].passengers.length;
-    const width = groups[EMERAUDE].passengers[0].length;
+    const final = [];
+    final[EMERAUDE] = groups[EMERAUDE].passengers.map(passengerToGroupMember('EMERAUDE'));
+    final[BLEU] = groups[BLEU].passengers.map(passengerToGroupMember('BLEU'));
+    final[ROSE] = groups[ROSE].passengers.map(passengerToGroupMember('ROSE'));
 
     const firstRow = [[
-      'Traversée',
+      'Groupe',
       'Prénom',
       'Nom',
-      'Email',
-      'Complice Emeraude',
-      'Complice Bleu',
-      'Complice Rose',
-      'Force Emeraude',
-      'Force Bleu',
-      'Force Rose',
       'A rempli son FIRM',
       'A un chien ou un chat',
       'A des grief',
-      'Date de création de la rangée',
+      'vip',
     ]]
-    targetSheet.getRange(1, 1, firstRow.length, firstRow[0].length).setValues(firstRow);
-    targetSheet.getRange(2, 1, height, width).setValues(groups[EMERAUDE].passengers);
+
+    const firstRowRange = targetSheet.getRange(1, 1, firstRow.length, firstRow[0].length);
+
+    const emeraudeRange = targetSheet.getRange(3, 1, final[EMERAUDE].length, final[EMERAUDE][0].length)
+    const bleuRange =  targetSheet.getRange(3 + final[EMERAUDE].length + 1, 1, final[BLEU].length, final[BLEU][0].length);
+    const roseRange = targetSheet.getRange(3 + final[EMERAUDE].length + 1 + final[BLEU].length + 1, 1, final[ROSE].length, final[ROSE][0].length);
+
+    targetSheet.getDataRange().clearContent();
+    firstRowRange.setValues(firstRow);
+    emeraudeRange.setValues(final[EMERAUDE]);
+    bleuRange.setValues(final[BLEU]);
+    roseRange.setValues(final[ROSE]);
 
     return;
   });

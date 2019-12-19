@@ -56,7 +56,6 @@ function completerListePassagers () {
 
   // import data from passengers sheet
   const passengersSheet = pa_getSheetById(spreadsheet, 442430394);
-  const passengersData = passengersSheet.getDataRange().getValues().slice(1);
 
   // import data from helloAsso sheet
   const helloAssoSheet = pa_getSheetById(spreadsheet, 0);
@@ -168,19 +167,13 @@ function completerListePassagers () {
     true,
     // Pet Lover ?
     function (pass) {
-      if (
-        pass[FIRM_COLUMNS.HAS_PET - 1] === 'Oui' &&
-        pass[FIRM_COLUMNS.WHICH_PET - 1]
-      ) {
-        const dog = (pass[FIRM_COLUMNS.WHICH_PET - 1].toLowerCase().indexOf('chien') !== -1);
-        const cat = (pass[FIRM_COLUMNS.WHICH_PET - 1].toLowerCase().indexOf('chat') !== -1);
+      const whichPet = pass[FIRM_COLUMNS.WHICH_PET - 1];
+      if (whichPet) {
+        const dog = (whichPet.toLowerCase().indexOf('chien') !== -1);
+        const cat = (whichPet.toLowerCase().indexOf('chat') !== -1);
 
-        if (dog && cat) {
-          return ('BOTH');
-        } else if (dog) {
-          return ('DOG');
-        } else if (cat) {
-          return ('CAT')
+        if (dog || cat) {
+          return (whichPet);
         }
       }
 
@@ -258,9 +251,6 @@ function completerListePassagers () {
 
   // Add all helloAsso passengers to a id -> passenger map
   var passengers = helloAssoPassengers.reduce(addPassenger, {});
-
-  // // Overwrite with already existing passengers
-  // passengers = passengersData.reduce(addPassenger, passengers);
 
   // Overwrite again with firm-specific values
   passengers = firmPassengers.reduce(firmAddPassenger, passengers);
