@@ -33,6 +33,20 @@ function createPassengerIdentifier (indices) {
   return passengerIdentifier;
 }
 
+function flat (depth, array) {
+	depth = isNaN(depth) ? 1 : Number(depth);
+
+	return depth ? array.reduce(function (acc, cur) {
+		if (Array.isArray(cur)) {
+			acc.push.apply(acc, flat(depth - 1, cur));
+		} else {
+			acc.push(cur);
+		}
+
+		return acc;
+	}, []) : array.slice();
+}
+
 /**
  * Crée la liste sur laquelle sont choisit les complices
  * et les contraintes avant de créer les groupes
@@ -102,26 +116,31 @@ function completerListePassagers () {
     FIRM_OK: 11,
     HAS_CAT_OR_DOG: 12,
     HAS_GRIEVANCES: 13,
+    DOUBLE: 14,
+    IS_PAYMENT_INFO: 15,
   }
 
-  function createRowFormatter (voyageIndex, emailIndex, fnIndex, lnIndex, hasFilledFirm, isPetLover, hasGrief) {
+  function createRowFormatter (voyageIndex, emailIndex, fnIndex, lnIndex, hasFilledFirm, isPetLover, hasGrief, isPayment) {
     function translateToPassengerRow (row) {
-      return [
-        row[voyageIndex], // voyage
-        row[fnIndex], // fn
-        row[lnIndex], // ln
-        row[emailIndex], // email
-        '', // accompliceEmeraude
-        '', // accompliceBleu
-        '', // accompliceRose
-        '', // forceEmeraude
-        '', // forceBleu
-        '', // forceRose
-        !!hasFilledFirm, // firm ok
-        isPetLover(row), // petLover
-        hasGrief(row), // grief
-        new Date(), // Date de création de la rangée
-      ]
+      const passenger = [];
+
+      passenger[PASSENGERS_COLUMNS.VOYAGE - 1] = row[voyageIndex]; // voyage
+      passenger[PASSENGERS_COLUMNS.FIRST_NAME - 1] = row[fnIndex]; // fn
+      passenger[PASSENGERS_COLUMNS.LAST_NAME - 1] = row[lnIndex]; // ln
+      passenger[PASSENGERS_COLUMNS.EMAIL - 1] = row[emailIndex]; // email
+      passenger[PASSENGERS_COLUMNS.ACCOMPLICE_EMERAUDE - 1] = ''; // accompliceEmeraude
+      passenger[PASSENGERS_COLUMNS.ACCOMPLICE_BLEU - 1] = ''; // accompliceBleu
+      passenger[PASSENGERS_COLUMNS.ACCOMPLICE_ROSE - 1] = ''; // accompliceRose
+      passenger[PASSENGERS_COLUMNS.FORCE_EMERAUDE - 1] = ''; // forceEmeraude
+      passenger[PASSENGERS_COLUMNS.FORCE_BLEU - 1] = ''; // forceBleu
+      passenger[PASSENGERS_COLUMNS.FORCE_ROSE - 1] = ''; // forceRose
+      passenger[PASSENGERS_COLUMNS.FIRM_OK - 1] = !!hasFilledFirm; // firm ok
+      passenger[PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1] = isPetLover(row); // petLover
+      passenger[PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1] = hasGrief(row); // grief
+      passenger[PASSENGERS_COLUMNS.DOUBLE - 1] = false; // has double
+      passenger[PASSENGERS_COLUMNS.IS_PAYMENT_INFO - 1] = !!isPayment; // is payment
+
+      return passenger;
     }
 
     return translateToPassengerRow
@@ -135,7 +154,8 @@ function completerListePassagers () {
     // Has filled firm ?
     false,
     function () { return false; },
-    function () { return false; }
+    function () { return false; },
+    true
   );
   var helloAssoPassengers = helloAssoData.map(formatHelloAssoRow);
 
@@ -169,26 +189,51 @@ function completerListePassagers () {
     // Has grievances ?
     function (pass) {
       return (pass[FIRM_COLUMNS.HAS_GRIEVANCES - 1] === 'Oui');
-    }
+    },
+    false
   );
 
   var firmPassengers = firmData.map(formatFirm);
 
-  function createPassengerAdder (passengerIdentifier, overwritten, noNew) {
-      function addPassenger (passengers, passenger) {
-        const identifier = passengerIdentifier(passenger);
-        // If the passenger already exists, only overwrite the selected columns
-        if (passengers[identifier] && overwritten && overwritten.length) {
-          overwritten.forEach(function (index) {
-            passengers[identifier][index] = passenger[index];
-          });
-        } else if (!noNew) {
-          // Otherwise create the passenger
-          passengers[identifier] = passenger;
-        }
+  // Now that everything has the correct format, merge all
 
-        return (passengers);
+  function createPassengerAdder (passengerIdentifier, options) {
+    options = options || {};
+    const overwritten = options.overwritten;
+    const noNew = !!options.noNew;
+    const isPayment = options.isPayment;
+
+    function addPassenger (passengers, passenger) {
+      passenger[PASSENGERS_COLUMNS.IS_PAYMENT_INFO - 1] = !!isPayment;
+      const identifier = passengerIdentifier(passenger);
+      // If the passenger already exists, only overwrite the selected columns
+      if (passengers[identifier]) {
+        // If only certain columns are to be considered
+        if (overwritten && overwritten.length) {
+          const newPassenger = passengers[identifier][0].slice(); // make copy of first passenger
+          // Change said columns
+          overwritten.forEach(function (index) {
+            newPassenger[index] = passenger[index];
+          });
+          // Add to passengers
+          passengers[identifier].push(newPassenger);
+        } else {
+          // Otherwise simply add to passengers
+          passengers[identifier].push(passenger);
+        }
+        if (!isPayment) {
+          // Tag this category as potential doubles
+          passengers[identifier].forEach(function (pass) {
+            pass[PASSENGERS_COLUMNS.DOUBLE - 1] = true;
+          });
+        }
+      } else if (!noNew) {
+        // Otherwise create the passenger category
+        passengers[identifier] = [passenger];
       }
+
+      return (passengers);
+    }
 
     return addPassenger;
   }
@@ -199,22 +244,23 @@ function completerListePassagers () {
     PASSENGERS_COLUMNS.LAST_NAME - 1
   ]);
 
-  const addPassenger = createPassengerAdder(passengerIdentifier);
+  const addPassenger = createPassengerAdder(passengerIdentifier, { isPayment: true });
   const firmAddPassenger = createPassengerAdder(
     passengerIdentifier,
-    [
-      PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1,
-      PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1,
-      PASSENGERS_COLUMNS.FIRM_OK - 1,
-    ],
-    true
+    {
+      overwritten: [
+        PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1,
+        PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1,
+        PASSENGERS_COLUMNS.FIRM_OK - 1,
+      ],
+    }
   );
 
   // Add all helloAsso passengers to a id -> passenger map
   var passengers = helloAssoPassengers.reduce(addPassenger, {});
 
-  // Overwrite with already existing passengers
-  passengers = passengersData.reduce(addPassenger, passengers);
+  // // Overwrite with already existing passengers
+  // passengers = passengersData.reduce(addPassenger, passengers);
 
   // Overwrite again with firm-specific values
   passengers = firmPassengers.reduce(firmAddPassenger, passengers);
@@ -223,11 +269,12 @@ function completerListePassagers () {
   passengers = passengerIDs.map(function (id) {
     return passengers[id];
   });
+  passengers = flat(1, passengers);
 
   const firstRow = [[
     'Traversée',
-    'Prénom',
     'Nom',
+    'Prénom',
     'Email',
     'Complice Emeraude',
     'Complice Bleu',
@@ -238,7 +285,8 @@ function completerListePassagers () {
     'A rempli son FIRM',
     'A un chien ou un chat',
     'A des grief',
-    'Date de création de la rangée',
+    'Peut-etre doublon',
+    'Infos de helloAsso',
   ]]
   passengersSheet.getRange(1, 1, firstRow.length, firstRow[0].length).setValues(firstRow);
   passengersSheet.getRange(2, 1, passengers.length, passengers[0].length).setValues(passengers);
