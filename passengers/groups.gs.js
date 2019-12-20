@@ -180,7 +180,7 @@ function pa_dispatchGroups () {
     ];
     const GROUP_MEMBER_INDICES = {
       COLOR:          GROUPS_MEMBER_COLUMNS.indexOf('COLOR'),
-      NUMBER:          GROUPS_MEMBER_COLUMNS.indexOf('NUMBER'),
+      NUMBER:         GROUPS_MEMBER_COLUMNS.indexOf('NUMBER'),
       FIRST_NAME:     GROUPS_MEMBER_COLUMNS.indexOf('FIRST_NAME'),
       LAST_NAME:      GROUPS_MEMBER_COLUMNS.indexOf('LAST_NAME'),
       FIRM_OK:        GROUPS_MEMBER_COLUMNS.indexOf('FIRM_OK'),
@@ -213,21 +213,40 @@ function pa_dispatchGroups () {
     }
 
     const final = [];
-    final[BLEU] = groups[BLEU].passengers.map(passengerToGroupMember('BLEU'));
-    final[EMERAUDE] = groups[EMERAUDE].passengers.map(passengerToGroupMember('EMERAUDE'));
-    final[ROSE] = groups[ROSE].passengers.map(passengerToGroupMember('ROSE'));
+    const COLOR_NAMES = [];
+    COLOR_NAMES[BLEU] = 'BLEU';
+    COLOR_NAMES[EMERAUDE] = 'EMERAUDE';
+    COLOR_NAMES[ROSE] = 'ROSE';
+    final[BLEU] = groups[BLEU].passengers.map(passengerToGroupMember(COLOR_NAMES[BLEU]));
+    final[EMERAUDE] = groups[EMERAUDE].passengers.map(passengerToGroupMember(COLOR_NAMES[EMERAUDE]));
+    final[ROSE] = groups[ROSE].passengers.map(passengerToGroupMember(COLOR_NAMES[ROSE]));
 
-    // function isAccomplice (passenger) {
-    //   return passenger[8];
-    // }
-    // const accompliceIndexBleu = final[BLEU].indexOf(final[BLEU].find(isAccomplice));
-    // const accompliceBleu = final[BLEU].splice(accompliceIndexBleu, 1);
-    // final[BLEU].splice(3, 0, accompliceBleu);
+    function isAccomplice (member) {
+      return member[GROUP_MEMBER_INDICES.ACCOMPLICE];
+    }
 
+    function placeAccomplice (group) {
+      const accompliceIndex = group.indexOf(group.filter(isAccomplice)[0]);
+      const accomplice = group.splice(accompliceIndex, 1)[0];
+      group.splice(2, 0, accomplice);
+    }
+
+    final.map(placeAccomplice);
+
+    for (var groupIndex = 0; groupIndex < final.length; groupIndex++) {
+      const MAX_PER_GROUP = 17;
+      for (var passengerIndex = 0; passengerIndex < MAX_PER_GROUP; passengerIndex++) {
+        if (!final[groupIndex][passengerIndex]) {
+          final[groupIndex].push(passengerToGroupMember(COLOR_NAMES[groupIndex])([]));
+        }
+      }
+    }
+
+    // Number members
     var num = 1;
-    for (var i = 0; i < final.length; i++) {
-      for (var j = 0; j < final[i].length; j++) {
-        final[i][j][1] = num;
+    for (var groupIndex = 0; groupIndex < final.length; groupIndex++) {
+      for (var j = 0; j < final[groupIndex].length; j++) {
+        final[groupIndex][j][GROUP_MEMBER_INDICES.NUMBER] = num;
         num++;
       }
     }
@@ -273,36 +292,15 @@ function pa_dispatchGroups () {
       final[ROSE][0].length
     );
 
-    // const allGroupsRange = targetSheet.getRange(
-    //   origin[0] + firstRow.length + padding,
-    //   origin[1],
-    //   origin[0] + firstRow.length + padding + final[EMERAUDE].length + padding + final[BLEU].length + padding + final[ROSE].length,
-    //   firstRow[0].length
-    // );
-    // var sheet = allGroupsRange.getSheet();
-    // var conditionalFormatRules = sheet.getConditionalFormatRules();
-    // const colEmeraude =
-    // conditionalFormatRules.push(
-    //   SpreadsheetApp.newConditionalFormatRule()
-    //   .setRanges([cell])
-    //   .whenTextEqualTo('EMERAUDE')
-    //   .setBackground(color)
-    //   .setFontColor(color)
-    //   .build(),
-    //   SpreadsheetApp.newConditionalFormatRule()
-    //   .setRanges([cell])
-    //   .whenCellNotEmpty()
-    //   .setBold(true)
-    //   .setBackground(color)
-    //   .setFontColor('#FFFFFF')
-    //   .build()
-    // );
-    // sheet.setConditionalFormatRules(conditionalFormatRules);
-
     targetSheet.getDataRange().clearContent();
     firstRowRange.setValues(firstRow);
+
     bleuRange.setValues(final[BLEU]);
+    bleuRange.setBorder(null, null, true, null, null, null, '#000000', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+
     emeraudeRange.setValues(final[EMERAUDE]);
+    emeraudeRange.setBorder(null, null, true, null, null, null, '#000000', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+
     roseRange.setValues(final[ROSE]);
 
     return;
