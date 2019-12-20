@@ -176,6 +176,7 @@ function pa_dispatchGroups () {
           passenger[PASSENGERS_COLUMNS.FIRM_OK - 1],
           passenger[PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1],
           passenger[PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1],
+          passenger[PASSENGERS_COLUMNS.VOYAGE_TYPE - 1],
           (
             passenger[PASSENGERS_COLUMNS.ACCOMPLICE_BLEU - 1] ||
             passenger[PASSENGERS_COLUMNS.ACCOMPLICE_EMERAUDE - 1] ||
@@ -197,6 +198,7 @@ function pa_dispatchGroups () {
       'A rempli son FIRM',
       'Parle de chien ou chat',
       'A des grief',
+      'Type de traversée',
       'vip',
     ]]
 
