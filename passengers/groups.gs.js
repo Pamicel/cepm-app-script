@@ -87,8 +87,8 @@ function pa_dispatchGroups () {
   const sourceSheet = pa_getSheetById(spreadsheet, 1277416213);
   const data = sourceSheet.getDataRange().getValues();
 
-  const EMERAUDE = 0;
-  const BLEU = 1;
+  const BLEU = 0;
+  const EMERAUDE = 1;
   const ROSE = 2;
 
   const voyageIndex = PASSENGERS_COLUMNS.VOYAGE - 1;
@@ -167,32 +167,74 @@ function pa_dispatchGroups () {
       targetSheet = spreadsheet.insertSheet(voyage);
     }
 
+    const GROUPS_MEMBER_COLUMNS = [
+      'COLOR',
+      'NUMBER',
+      'FIRST_NAME',
+      'LAST_NAME',
+      'FIRM_OK',
+      'HAS_CAT_OR_DOG',
+      'HAS_GRIEVANCES',
+      'VOYAGE_TYPE',
+      'ACCOMPLICE',
+    ];
+    const GROUP_MEMBER_INDICES = {
+      COLOR:          GROUPS_MEMBER_COLUMNS.indexOf('COLOR'),
+      NUMBER:          GROUPS_MEMBER_COLUMNS.indexOf('NUMBER'),
+      FIRST_NAME:     GROUPS_MEMBER_COLUMNS.indexOf('FIRST_NAME'),
+      LAST_NAME:      GROUPS_MEMBER_COLUMNS.indexOf('LAST_NAME'),
+      FIRM_OK:        GROUPS_MEMBER_COLUMNS.indexOf('FIRM_OK'),
+      HAS_CAT_OR_DOG: GROUPS_MEMBER_COLUMNS.indexOf('HAS_CAT_OR_DOG'),
+      HAS_GRIEVANCES: GROUPS_MEMBER_COLUMNS.indexOf('HAS_GRIEVANCES'),
+      VOYAGE_TYPE:    GROUPS_MEMBER_COLUMNS.indexOf('VOYAGE_TYPE'),
+      ACCOMPLICE:     GROUPS_MEMBER_COLUMNS.indexOf('ACCOMPLICE'),
+    }
+
     function passengerToGroupMember (color) {
       return function (passenger) {
-        return [
-          color,
-          passenger[PASSENGERS_COLUMNS.FIRST_NAME - 1],
-          passenger[PASSENGERS_COLUMNS.LAST_NAME - 1],
-          passenger[PASSENGERS_COLUMNS.FIRM_OK - 1],
-          passenger[PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1],
-          passenger[PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1],
-          passenger[PASSENGERS_COLUMNS.VOYAGE_TYPE - 1],
-          (
-            passenger[PASSENGERS_COLUMNS.ACCOMPLICE_BLEU - 1] ||
-            passenger[PASSENGERS_COLUMNS.ACCOMPLICE_EMERAUDE - 1] ||
-            passenger[PASSENGERS_COLUMNS.ACCOMPLICE_ROSE - 1]
-          ),
-        ]
+        const member = [];
+
+        member[GROUP_MEMBER_INDICES.COLOR] = color;
+        member[GROUP_MEMBER_INDICES.NUMBER] = 0; // Placeholder for number in group
+        member[GROUP_MEMBER_INDICES.FIRST_NAME] = passenger[PASSENGERS_COLUMNS.FIRST_NAME - 1];
+        member[GROUP_MEMBER_INDICES.LAST_NAME] = passenger[PASSENGERS_COLUMNS.LAST_NAME - 1];
+        member[GROUP_MEMBER_INDICES.FIRM_OK] = passenger[PASSENGERS_COLUMNS.FIRM_OK - 1];
+        member[GROUP_MEMBER_INDICES.HAS_CAT_OR_DOG] = passenger[PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1];
+        member[GROUP_MEMBER_INDICES.HAS_GRIEVANCES] = passenger[PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1];
+        member[GROUP_MEMBER_INDICES.VOYAGE_TYPE] = passenger[PASSENGERS_COLUMNS.VOYAGE_TYPE - 1];
+        member[GROUP_MEMBER_INDICES.ACCOMPLICE] = (
+          passenger[PASSENGERS_COLUMNS.ACCOMPLICE_BLEU - 1] ||
+          passenger[PASSENGERS_COLUMNS.ACCOMPLICE_EMERAUDE - 1] ||
+          passenger[PASSENGERS_COLUMNS.ACCOMPLICE_ROSE - 1]
+        );
+
+        return member.map(function (val) { return val || ''; });
       };
     }
 
     const final = [];
-    final[EMERAUDE] = groups[EMERAUDE].passengers.map(passengerToGroupMember('EMERAUDE'));
     final[BLEU] = groups[BLEU].passengers.map(passengerToGroupMember('BLEU'));
+    final[EMERAUDE] = groups[EMERAUDE].passengers.map(passengerToGroupMember('EMERAUDE'));
     final[ROSE] = groups[ROSE].passengers.map(passengerToGroupMember('ROSE'));
+
+    // function isAccomplice (passenger) {
+    //   return passenger[8];
+    // }
+    // const accompliceIndexBleu = final[BLEU].indexOf(final[BLEU].find(isAccomplice));
+    // const accompliceBleu = final[BLEU].splice(accompliceIndexBleu, 1);
+    // final[BLEU].splice(3, 0, accompliceBleu);
+
+    var num = 1;
+    for (var i = 0; i < final.length; i++) {
+      for (var j = 0; j < final[i].length; j++) {
+        final[i][j][1] = num;
+        num++;
+      }
+    }
 
     const firstRow = [[
       'Groupe',
+      'Numéro',
       'Prénom',
       'Nom',
       'A rempli son FIRM',
@@ -202,16 +244,65 @@ function pa_dispatchGroups () {
       'vip',
     ]]
 
-    const firstRowRange = targetSheet.getRange(1, 1, firstRow.length, firstRow[0].length);
+    const padding = 0;
+    const origin = [1, 1]; // In rows/columns numbering
 
-    const emeraudeRange = targetSheet.getRange(3, 1, final[EMERAUDE].length, final[EMERAUDE][0].length)
-    const bleuRange =  targetSheet.getRange(3 + final[EMERAUDE].length + 1, 1, final[BLEU].length, final[BLEU][0].length);
-    const roseRange = targetSheet.getRange(3 + final[EMERAUDE].length + 1 + final[BLEU].length + 1, 1, final[ROSE].length, final[ROSE][0].length);
+    const firstRowRange = targetSheet.getRange(
+      origin[0],
+      origin[1],
+      firstRow.length,
+      firstRow[0].length
+    );
+
+    const bleuRange = targetSheet.getRange(
+      origin[0] + firstRow.length + padding,
+      origin[1],
+      final[BLEU].length,
+      final[BLEU][0].length
+    );
+    const emeraudeRange =  targetSheet.getRange(
+      origin[0] + firstRow.length + padding + final[BLEU].length + padding,
+      origin[1],
+      final[EMERAUDE].length,
+      final[EMERAUDE][0].length
+    );
+    const roseRange = targetSheet.getRange(
+      origin[0] + firstRow.length + padding + final[BLEU].length + padding + final[EMERAUDE].length + padding,
+      origin[1],
+      final[ROSE].length,
+      final[ROSE][0].length
+    );
+
+    // const allGroupsRange = targetSheet.getRange(
+    //   origin[0] + firstRow.length + padding,
+    //   origin[1],
+    //   origin[0] + firstRow.length + padding + final[EMERAUDE].length + padding + final[BLEU].length + padding + final[ROSE].length,
+    //   firstRow[0].length
+    // );
+    // var sheet = allGroupsRange.getSheet();
+    // var conditionalFormatRules = sheet.getConditionalFormatRules();
+    // const colEmeraude =
+    // conditionalFormatRules.push(
+    //   SpreadsheetApp.newConditionalFormatRule()
+    //   .setRanges([cell])
+    //   .whenTextEqualTo('EMERAUDE')
+    //   .setBackground(color)
+    //   .setFontColor(color)
+    //   .build(),
+    //   SpreadsheetApp.newConditionalFormatRule()
+    //   .setRanges([cell])
+    //   .whenCellNotEmpty()
+    //   .setBold(true)
+    //   .setBackground(color)
+    //   .setFontColor('#FFFFFF')
+    //   .build()
+    // );
+    // sheet.setConditionalFormatRules(conditionalFormatRules);
 
     targetSheet.getDataRange().clearContent();
     firstRowRange.setValues(firstRow);
-    emeraudeRange.setValues(final[EMERAUDE]);
     bleuRange.setValues(final[BLEU]);
+    emeraudeRange.setValues(final[EMERAUDE]);
     roseRange.setValues(final[ROSE]);
 
     return;
