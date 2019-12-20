@@ -88,6 +88,7 @@ function completerListePassagers () {
     HAS_PET: 14,
     WHICH_PET: 15,
     HAS_GRIEVANCES: 16,
+    VOYAGE_TYPE: 19,
   }
 
   // Replace all voyages in helloAsso by what the assiciativeTable gives
@@ -109,17 +110,15 @@ function completerListePassagers () {
     ACCOMPLICE_EMERAUDE: 5,
     ACCOMPLICE_BLEU: 6,
     ACCOMPLICE_ROSE: 7,
-    FORCE_EMERAUDE: 8,
-    FORCE_BLEU: 9,
-    FORCE_ROSE: 10,
-    FIRM_OK: 11,
-    HAS_CAT_OR_DOG: 12,
-    HAS_GRIEVANCES: 13,
-    DOUBLE: 14,
-    IS_PAYMENT_INFO: 15,
+    FIRM_OK: 8,
+    DOUBLE: 9,
+    IS_PAYMENT_INFO: 10,
+    HAS_CAT_OR_DOG: 11,
+    HAS_GRIEVANCES: 12,
+    VOYAGE_TYPE: 13,
   }
 
-  function createRowFormatter (voyageIndex, emailIndex, fnIndex, lnIndex, hasFilledFirm, isPetLover, hasGrief, isPayment) {
+  function createRowFormatter (voyageIndex, emailIndex, fnIndex, lnIndex, hasFilledFirm, isPetLover, hasGrief, isPayment, voyageType) {
     function translateToPassengerRow (row) {
       const passenger = [];
 
@@ -130,10 +129,8 @@ function completerListePassagers () {
       passenger[PASSENGERS_COLUMNS.ACCOMPLICE_EMERAUDE - 1] = ''; // accompliceEmeraude
       passenger[PASSENGERS_COLUMNS.ACCOMPLICE_BLEU - 1] = ''; // accompliceBleu
       passenger[PASSENGERS_COLUMNS.ACCOMPLICE_ROSE - 1] = ''; // accompliceRose
-      passenger[PASSENGERS_COLUMNS.FORCE_EMERAUDE - 1] = ''; // forceEmeraude
-      passenger[PASSENGERS_COLUMNS.FORCE_BLEU - 1] = ''; // forceBleu
-      passenger[PASSENGERS_COLUMNS.FORCE_ROSE - 1] = ''; // forceRose
       passenger[PASSENGERS_COLUMNS.FIRM_OK - 1] = !!hasFilledFirm; // firm ok
+      passenger[PASSENGERS_COLUMNS.VOYAGE_TYPE - 1] = voyageType(row);
       passenger[PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1] = isPetLover(row); // petLover
       passenger[PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1] = hasGrief(row); // grief
       passenger[PASSENGERS_COLUMNS.DOUBLE - 1] = false; // has double
@@ -154,7 +151,8 @@ function completerListePassagers () {
     false,
     function () { return false; },
     function () { return false; },
-    true
+    true,
+    function () { return false; }
   );
   var helloAssoPassengers = helloAssoData.map(formatHelloAssoRow);
 
@@ -183,7 +181,10 @@ function completerListePassagers () {
     function (pass) {
       return (pass[FIRM_COLUMNS.HAS_GRIEVANCES - 1] === 'Oui');
     },
-    false
+    false,
+    function (pass) {
+      return (pass[FIRM_COLUMNS.VOYAGE_TYPE - 1]);
+    }
   );
 
   var firmPassengers = firmData.map(formatFirm);
@@ -245,6 +246,7 @@ function completerListePassagers () {
         PASSENGERS_COLUMNS.HAS_CAT_OR_DOG - 1,
         PASSENGERS_COLUMNS.HAS_GRIEVANCES - 1,
         PASSENGERS_COLUMNS.FIRM_OK - 1,
+        PASSENGERS_COLUMNS.VOYAGE_TYPE - 1,
       ],
     }
   );
@@ -269,14 +271,12 @@ function completerListePassagers () {
     'Complice Emeraude',
     'Complice Bleu',
     'Complice Rose',
-    'Force Emeraude',
-    'Force Bleu',
-    'Force Rose',
     'A rempli son FIRM',
-    'A un chien ou un chat',
-    'A des grief',
     'Peut-etre doublon',
     'Infos de helloAsso',
+    'Parle de chien ou chat',
+    'A des grief',
+    'Type de traversée',
   ]]
   passengersSheet.getRange(1, 1, firstRow.length, firstRow[0].length).setValues(firstRow);
   passengersSheet.getRange(2, 1, passengers.length, passengers[0].length).setValues(passengers);

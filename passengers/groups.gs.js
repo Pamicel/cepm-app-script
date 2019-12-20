@@ -38,14 +38,12 @@ function pa_dispatchGroups () {
     ACCOMPLICE_EMERAUDE: 5,
     ACCOMPLICE_BLEU: 6,
     ACCOMPLICE_ROSE: 7,
-    FORCE_EMERAUDE: 8,
-    FORCE_BLEU: 9,
-    FORCE_ROSE: 10,
-    FIRM_OK: 11,
-    HAS_CAT_OR_DOG: 12,
-    HAS_GRIEVANCES: 13,
-    DOUBLE: 14,
-    IS_PAYMENT_INFO: 15,
+    FIRM_OK: 8,
+    DOUBLE: 9,
+    IS_PAYMENT_INFO: 10,
+    HAS_CAT_OR_DOG: 11,
+    HAS_GRIEVANCES: 12,
+    VOYAGE_TYPE: 13,
   }
 
   // UTILS
@@ -197,7 +195,7 @@ function pa_dispatchGroups () {
       'Prénom',
       'Nom',
       'A rempli son FIRM',
-      'A un chien ou un chat',
+      'Parle de chien ou chat',
       'A des grief',
       'vip',
     ]]
