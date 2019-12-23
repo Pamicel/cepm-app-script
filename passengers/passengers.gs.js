@@ -278,6 +278,7 @@ function completerListePassagers () {
     'A des grief',
     'Type de traversée',
   ]]
+
   passengersSheet.getRange(1, 1, firstRow.length, firstRow[0].length).setValues(firstRow);
   passengersSheet.getRange(2, 1, passengers.length, passengers[0].length).setValues(passengers);
 }

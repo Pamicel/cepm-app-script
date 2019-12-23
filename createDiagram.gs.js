@@ -70,6 +70,70 @@ function createDiagramSheet() {
   createDiagram(sheet, [0, 0], allScenes, fullScenePrinter, activityPadding);
 }
 
+function createDiagramOnSheet(spreadsheet, sheetName, allScenes) {
+  // Create the sheet for the voyage
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+  }
+  sheet.clearConditionalFormatRules();
+  sheet.clear();
+  sheet.setFrozenColumns(0);
+  sheet.setFrozenRows(0);
+
+  sheet.getRange(1, 1, 1, 4)
+    .clear()
+    .merge()
+    .setValue(sheetName)
+    .setFontSize(24)
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle')
+    .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+
+  const fullScenePrinter = new FullScenePrinter(getInfoSheet(), sheet);
+  const activityPadding = [1, 0];
+  createDiagram(sheet, [1, 0], allScenes, fullScenePrinter, activityPadding);
+}
+
+function createHostsDiagrams() {
+  const spreadsheet = SpreadsheetApp.openById('1dHJb1geWyWj_zQgzAT9WeUIvf86MMeWcp69YYn3OvpA');
+
+  const scenesSissi = [[3],[5],[6],[9],[12],[13],[15],[17],[18],[19]];
+  createDiagramOnSheet(spreadsheet, 'Traversée Sissi', scenesSissi);
+
+  const scenesJoris = [[3],[5],[6],[11],[12],[13],[15],[17],[18],[19]];
+  createDiagramOnSheet(spreadsheet, 'Traversée Joris', scenesJoris);
+
+  const scenesJules = [[3],[5],[7],[11],[12],[13],[16],[17],[18],[19]];
+  createDiagramOnSheet(spreadsheet, 'Traversée Jules', scenesJules);
+
+  const scenesMimouna = [[4],[5],[8],[10],[12],[14],[16],[17],[18],[19]];
+  createDiagramOnSheet(spreadsheet, 'Traversée Mimouna', scenesMimouna);
+
+  const scenesPat = [[3],[5],[8],[10],[12],[14],[16],[17],[18],[19]];
+  createDiagramOnSheet(spreadsheet, 'Traversée Pat', scenesPat);
+
+  const scenesFred = [[4],[5],[7],[9],[12],[13],[15],[17],[18],[19]];
+  createDiagramOnSheet(spreadsheet, 'Traversée Fred', scenesFred);
+
+  const scenesIris = [[3],[5],[14],[16],[17],[18],[19]];
+  createDiagramOnSheet(spreadsheet, 'Traversée Iris', scenesIris);
+}
+
+function createGroupsDiagrams() {
+  const spreadsheet = SpreadsheetApp.openById('1dHJb1geWyWj_zQgzAT9WeUIvf86MMeWcp69YYn3OvpA');
+
+  var scenesBleu = [[3, 4],[5],[6],[9],[12],[13],[15],[17],[18],[19]];
+  var scenesEmeraudeI = [[3, 4],[5],[8],[11],[12],[13],[15],[17],[18],[19]];
+  var scenesEmeraudeII = [[3, 4],[5],[8],[11],[12],[14],[16],[17],[18],[19]];
+  var scenesRose = [[3, 4],[5],[7],[10],[12],[14],[16],[17],[18],[19]];
+
+  createDiagramOnSheet(spreadsheet, 'Traversée Bleue', scenesBleu);
+  createDiagramOnSheet(spreadsheet, 'Traversée Émeraude I', scenesEmeraudeI);
+  createDiagramOnSheet(spreadsheet, 'Traversée Émeraude II', scenesEmeraudeII);
+  createDiagramOnSheet(spreadsheet, 'Traversée Rose', scenesRose);
+}
+
 function createVariationsSheet() {
   // Activate the test sheet
   var sheet = getVariationsSheet();
